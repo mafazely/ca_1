@@ -135,8 +135,8 @@ int main(int argc, char const *argv[])
             {
                 perror("Welcome message not sent !");
             }
-
-            puts("Welcome message sent successfully");
+            else
+                puts("Welcome message sent successfully");
 
             /* add new socket to array of sockets */
             for (int i = 0; i < MAX_CLIENTS_COUNT; i++)
