@@ -28,11 +28,317 @@ int addrlen = sizeof(address) ;
 fd_set client_fds ; /* set of file descriptors of clients */
 int max_fds ;
 int clientSockets[MAX_CLIENTS_COUNT] = {0} ;
+
+char *wait_message = "wait for finding opponent(s).";
+int client_giving_port = 8001;
+char *status[MAX_CLIENTS_COUNT];
 /* ------------------ */
 
 
+void Request_Handler(char *info, int index)
+{
+    printf("message get from client in Request_Handler : \"%s\"\n", info);
+    if (strcmp(info, "2") == 0)
+    {
+        status[index] = "2";
+    }
+    else if (strcmp(info, "3") == 0)
+    {
+        status[index] = "3";
+    }
+    else if (strcmp(info, "4") == 0)
+    {
+        status[index] = "4";
+    }
+    printf("Client requested a %s-Group\n", status[index]);
+}
 
+void Connect_To_1_Opponent(int index, int i)
+{
+    perror("get inside Connect_To_1_Opponent() function");
+    int port;
+    int data_send1, data_send2;
+    char str_port[5];
+    char turn1[2];
+    char turn2[2];
+    char wspace[2];
+    char sending_message1[10];
+    char sending_message2[10];
 
+    port = client_giving_port;
+    client_giving_port++;
+    perror("before sprintf() func");
+    sprintf(str_port, "%d", port);
+
+    perror("before strcpy() func");
+
+    strcpy(turn1, "1");
+    strcpy(turn2, "2");
+    strcpy(wspace, " ");
+
+    perror("before first strcat() func");
+
+    strcat(sending_message1, str_port);
+    strcat(sending_message1, wspace);
+    strcat(sending_message1, turn1);
+    int len1 = strlen(sending_message1);
+
+    perror("before second strcat() func");
+
+    strcat(sending_message2, str_port);
+    strcat(sending_message2, wspace);
+    strcat(sending_message2, turn2);
+    int len2 = strlen(sending_message2);
+
+    perror("being before send() function");
+    printf("sending_message1 is : \"%s\" and len1 is : %d on fd : %d\n", sending_message1, len1, clientSockets[index]);
+    printf("sending_message2 is : \"%s\" and len2 is : %d on fd : %d and i = %d\n", sending_message2, len2, clientSockets[i], i);
+    if ((data_send1 = send(clientSockets[index], sending_message1, len1, 0)) < 0 &&
+        (data_send2 = sendto(clientSockets[i], sending_message2, len2, 0, NULL, 0)) < 0)
+    {
+        perror("sending opponent data failed");
+    }
+    else
+    {
+        printf("data_send1 is : \"%d\" and data_send2 is : %d\n", data_send1, data_send2);
+        printf("two clients are connecting...\n");
+        close(clientSockets[i]);
+        close(clientSockets[index]);
+        clientSockets[i] = 0;
+        clientSockets[index] = 0;
+    }
+}
+
+void Connect_To_2_Opponent(int index, int i, int j)
+{
+    int port;
+    char *str_port;
+    char *turn1;
+    char *turn2;
+    char *turn3;
+    char *wspace;
+    char *sending_message1 = "";
+    char *sending_message2 = "";
+    char *sending_message3 = "";
+
+    port = client_giving_port;
+    client_giving_port++;
+    perror("before sprintf() func");
+    sprintf(str_port, "%d", port);
+
+    strcpy(turn1, "1");
+    strcpy(turn2, "2");
+    strcpy(turn3, "3");
+    strcpy(wspace, " ");
+
+    strcat(sending_message1, str_port);
+    strcat(sending_message1, wspace);
+    strcat(sending_message1, turn1);
+    int len1 = strlen(sending_message1);
+
+    strcat(sending_message2, str_port);
+    strcat(sending_message2, wspace);
+    strcat(sending_message2, turn2);
+    int len2 = strlen(sending_message2);
+
+    strcat(sending_message3, str_port);
+    strcat(sending_message3, wspace);
+    strcat(sending_message3, turn3);
+    int len3 = strlen(sending_message3);
+
+    if (send(clientSockets[index], sending_message1, len1, 0) < 0 && send(clientSockets[i], sending_message2, len2, 0) < 0 && send(clientSockets[j], sending_message3, len3, 0) < 0)
+    {
+        perror("sending opponent data failed");
+    }
+    else
+    {
+        printf("three clients are connecting...\n");
+        close(clientSockets[i]);
+        close(clientSockets[j]);
+        close(clientSockets[index]);
+        clientSockets[i] = 0;
+        clientSockets[j] = 0;
+        clientSockets[index] = 0;
+    }
+}
+
+void Connect_To_3_Opponent(int index, int i, int j, int k)
+{
+    int port;
+    char *str_port;
+    char *turn1;
+    char *turn2;
+    char *turn3;
+    char *turn4;
+    char *wspace;
+    char *sending_message1 = "";
+    char *sending_message2 = "";
+    char *sending_message3 = "";
+    char *sending_message4 = "";
+
+    port = client_giving_port;
+    client_giving_port++;
+    perror("before sprintf() func");
+    sprintf(str_port, "%d", port);
+
+    strcpy(turn1, "1");
+    strcpy(turn2, "2");
+    strcpy(turn3, "3");
+    strcpy(turn4, "4");
+    strcpy(wspace, " ");
+
+    strcat(sending_message1, str_port);
+    strcat(sending_message1, wspace);
+    strcat(sending_message1, turn1);
+    int len1 = strlen(sending_message1);
+
+    strcat(sending_message2, str_port);
+    strcat(sending_message2, wspace);
+    strcat(sending_message2, turn2);
+    int len2 = strlen(sending_message2);
+
+    strcat(sending_message3, str_port);
+    strcat(sending_message3, wspace);
+    strcat(sending_message3, turn3);
+    int len3 = strlen(sending_message3);
+
+    strcat(sending_message4, str_port);
+    strcat(sending_message4, wspace);
+    strcat(sending_message4, turn4);
+    int len4 = strlen(sending_message4);
+
+    if (send(clientSockets[index], sending_message1, len1, 0) < 0 && send(clientSockets[i], sending_message2, len2, 0) < 0 && send(clientSockets[j], sending_message3, len3, 0) < 0 && send(clientSockets[k], sending_message4, len4, 0) < 0)
+    {
+        perror("sending opponent data failed");
+    }
+    else
+    {
+        printf("four clients are connecting...\n");
+        close(clientSockets[i]);
+        close(clientSockets[j]);
+        close(clientSockets[k]);
+        close(clientSockets[index]);
+        clientSockets[i] = 0;
+        clientSockets[j] = 0;
+        clientSockets[k] = 0;
+        clientSockets[index] = 0;
+    }
+}
+
+void Find_Opponent(int index)
+{
+    //printf("Find_Opponent opened \n");
+    int len_wait_mes = strlen(wait_message) + 1;
+    int num;
+    num = atoi(status[index]);
+    printf("wants to go inside the switch case \n");
+    printf("num is : \"%d\" \n", num);
+    if (num == 2)
+    {
+        printf("in num == 2 \n");
+        for (int i = 0; i < MAX_CLIENTS_COUNT; i++)
+        {
+            if (i == index)
+                continue;
+            else
+            {
+                if (clientSockets[i] != 0 && strcmp(status[i], status[index]) == 0)
+                {
+                    //printf("find a copponent !!!! \n");
+                    Connect_To_1_Opponent(index, i);
+                    printf("-------- start a 2-person game ------- \n");
+                    return;
+                }
+            }
+        }
+
+        if (send(clientSockets[index], wait_message, len_wait_mes, 0) < 0)
+        {
+            perror("sending find opponent message failed");
+        }
+        printf("the sent mwssage : %s \n", wait_message);
+    }
+
+    else if (num == 3)
+    {
+        printf("in num == 3 \n");
+        for (int i = 0; i < MAX_CLIENTS_COUNT; i++)
+        {
+            if (i == index)
+                continue;
+            else
+            {
+                if (clientSockets[i] != 0 && strcmp(status[i], status[index]) == 0)
+
+                    for (int j = 0; j < MAX_CLIENTS_COUNT; j++)
+                    {
+                        if (j == index || j == i)
+                            continue;
+                        else
+                        {
+                            if (clientSockets[j] != 0 && strcmp(status[j], status[index]) == 0)
+                            {
+                                Connect_To_2_Opponent(index, i, j);
+                                printf("-------- start a 3-person game ------- \n");
+                                return;
+                            }
+                        }
+                    }
+            }
+        }
+
+        if (send(clientSockets[index], wait_message, len_wait_mes, 0) < 0)
+        {
+            perror("sending find opponent message failed");
+        }
+        printf("the sent mwssage : %s \n", wait_message);
+    }
+    else if (num == 4)
+    {
+        printf("in num == 4 \n");
+        for (int i = 0; i < MAX_CLIENTS_COUNT; i++)
+        {
+            if (i == index)
+                continue;
+            else
+            {
+                if (clientSockets[i] != 0 && strcmp(status[i], status[index]) == 0)
+
+                    for (int j = 0; j < MAX_CLIENTS_COUNT; j++)
+                    {
+                        if (j == index || j == i)
+                            continue;
+                        else
+                        {
+                            if (clientSockets[j] != 0 && strcmp(status[j], status[index]) == 0)
+
+                                for (int k = 0; k < MAX_CLIENTS_COUNT; k++)
+                                {
+                                    if (k == index || k == i || k == j)
+                                        continue;
+                                    else
+                                    {
+                                        if (clientSockets[k] != 0 && strcmp(status[k], status[index]) == 0)
+                                        {
+                                            Connect_To_3_Opponent(index, i, j, k);
+                                            printf("-------- start a 4-person game ------- \n");
+                                            return;
+                                        }
+                                    }
+                                }
+                        }
+                    }
+            }
+        }
+
+        if (send(clientSockets[index], wait_message, len_wait_mes, 0) < 0)
+        {
+            perror("sending find opponent message failed");
+        }
+    }
+}
+
+///////////////////////////
 
 void Create_TCP_Server_Port()
 {
@@ -215,8 +521,11 @@ int main(int argc, char const *argv[])
                     //send(sd, buffer, strlen(buffer), 0);
                     //printf("the received message is: \"%s\" \n", buffer);
                     write(1, "the received message is: \"", 26);
-                    write(1, buffer, strlen(buffer)-2);
+                    write(1, buffer, strlen(buffer));
+                    //write(1, buffer, strlen(buffer) - 2);  for telnet command
                     write(1, "\" \n", 3);
+                    Request_Handler(buffer, i);
+                    Find_Opponent(i);
                 }
             }
         }
