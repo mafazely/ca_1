@@ -40,14 +40,16 @@ void Create_TCP_Server_Port()
     /* creating socket with IPv4 protocol and TCP type */
     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) <= 0)
     {
-        perror("socket failed");
+        //perror("socket failed");
+        write(2, "socket failed\n", 14);
         exit(EXIT_FAILURE);
     }
 
     /*  set master socket to allow multiple connections */
     if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt)))
     {
-        perror("setsockopt failed");
+        //perror("setsockopt failed");
+        write(2, "setsockopt failed\n", 18);
         exit(EXIT_FAILURE);
     }
 
@@ -58,14 +60,16 @@ void Create_TCP_Server_Port()
     /* binding socket to the port [8080] in localhost*/
     if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0)
     {
-        perror("bind failed");
+        //perror("bind failed");
+        write(2, "bind failed\n", 12);
         exit(EXIT_FAILURE);
     }
 
     /* listening */
     if (listen(server_fd, LISTENQ) < 0)
     {
-        perror("listening failed");
+        //perror("listening failed");
+        write(2, "listening failed\n", 17);
         exit(EXIT_FAILURE);
     }
 }
@@ -78,6 +82,7 @@ int main(int argc, char const *argv[])
 
     char buffer[MAXSIZE+1]; //data buffer of 1K
     char buff[MAXSIZE + 1];
+    char str[MAXSIZE + 1];
 
     /* welcome message */
     char *message = "Hi you connected to server successfully \r\n";
@@ -114,7 +119,8 @@ int main(int argc, char const *argv[])
 
         if ((event < 0) && (errno != EINTR))
         {
-            perror("select() failed");
+            //perror("select() failed");
+            write(2, "select() failed\n", 16);
         }
 
         /* If something happened on the master socket ,
@@ -123,21 +129,36 @@ int main(int argc, char const *argv[])
         {
             if ((new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t *)&addrlen)) < 0)
             {
-                perror("accepting faild");
+                //perror("accepting faild");
+                write(2, "accepting faild\n", 16);
                 exit(EXIT_FAILURE);
             }
 
             /* inform user of socket number - used in send and receive commands */
-            printf("New connection , socket fd is %d , ip is : %s , port : %d\n " , new_socket ,
-                inet_ntoa(address.sin_addr) , ntohs(address.sin_port));
+            //printf("New connection , socket fd is %d , ip is : %s , port : %d\n " , new_socket ,
+            //    inet_ntoa(address.sin_addr) , ntohs(address.sin_port));
+
+            write(1, "New connection , socket fd is ", 30);
+            sprintf(str, "%d", new_socket);
+            write(1, str, strlen(str));
+            memset(str, 0, sizeof(str));
+            write(1, " , ip is : ", 11);
+            write(1, inet_ntoa(address.sin_addr), strlen(inet_ntoa(address.sin_addr)));
+            write(1, " , port ", 8);
+            sprintf(str, "%d", ntohs(address.sin_port));
+            write(1, str, strlen(str));
+            memset(str, 0, sizeof(str));
+            write(1, " \n", 2);
 
             /* send new connection greeting message */
             if (send(new_socket, message, strlen(message), 0) != strlen(message))
             {
-                perror("Welcome message not sent !");
+                //perror("Welcome message not sent !");
+                write(2, "Welcome message not sent !\n", 27);
             }
             else
-                puts("Welcome message sent successfully");
+                //puts("Welcome message sent successfully");
+                write(1, "Welcome message sent successfully\n", 34);
 
             /* add new socket to array of sockets */
             for (int i = 0; i < MAX_CLIENTS_COUNT; i++)
@@ -146,7 +167,12 @@ int main(int argc, char const *argv[])
                 if (clientSockets[i] == 0)
                 {
                     clientSockets[i] = new_socket;
-                    printf("Adding to list of sockets as %d\n", i);
+                    //printf("Adding to list of sockets as %d\n", i);
+                    write(1, "Adding to list of sockets as ", 29);
+                    sprintf(str, "%d", i);
+                    write(1, str, strlen(str));
+                    memset(str, 0, sizeof(str));
+                    write(1, "\n", 1);
                     break;
                 }
             }
@@ -165,8 +191,15 @@ int main(int argc, char const *argv[])
                 {
                     /* Somebody disconnected , get his details and print */
                     getpeername(sd, (struct sockaddr *)&address, (socklen_t *)&addrlen);
-                    printf("Host disconnected , ip %s , port %d \n",
-                        inet_ntoa(address.sin_addr), ntohs(address.sin_port));
+                    //printf("Host disconnected , ip %s , port %d \n",
+                    //    inet_ntoa(address.sin_addr), ntohs(address.sin_port));
+                    write(1, "Host disconnected , ip : ", 25);
+                    write(1, inet_ntoa(address.sin_addr), strlen(inet_ntoa(address.sin_addr)));
+                    write(1, " , port ", 8);
+                    sprintf(str, "%d", ntohs(address.sin_port));
+                    write(1, str, strlen(str));
+                    memset(str, 0, sizeof(str));
+                    write(1, " \n", 2);
 
                     /* Close the socket and mark as 0 in list for reuse */
                     close(sd);
@@ -180,7 +213,10 @@ int main(int argc, char const *argv[])
                      * of the data read */
                     buffer[valread] = '\0';
                     //send(sd, buffer, strlen(buffer), 0);
-                    printf("the received message is: \"%s\" \n", buffer);
+                    //printf("the received message is: \"%s\" \n", buffer);
+                    write(1, "the received message is: \"", 26);
+                    write(1, buffer, strlen(buffer)-2);
+                    write(1, "\" \n", 3);
                 }
             }
         }
@@ -198,3 +234,4 @@ int main(int argc, char const *argv[])
 // }
 // else
 //     printf("the sent message : \"%s\" \n", buffer);
+
