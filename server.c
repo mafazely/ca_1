@@ -45,7 +45,7 @@ void Create_TCP_Server_Port()
     }
 
     /*  set master socket to allow multiple connections */
-    if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR , &opt, sizeof(opt)))
+    if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt)))
     {
         perror("setsockopt failed");
         exit(EXIT_FAILURE);
@@ -56,14 +56,14 @@ void Create_TCP_Server_Port()
     address.sin_port = htons(SERV_PORT);  // host format to network format convertor
 
     /* binding socket to the port [8080] in localhost*/
-    if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) <= 0)
+    if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0)
     {
         perror("bind failed");
         exit(EXIT_FAILURE);
     }
 
     /* listening */
-    if (listen(server_fd, LISTENQ) <= 0)
+    if (listen(server_fd, LISTENQ) < 0)
     {
         perror("listening failed");
         exit(EXIT_FAILURE);
