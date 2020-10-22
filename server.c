@@ -77,6 +77,7 @@ int main(int argc, char const *argv[])
     Create_TCP_Server_Port();
 
     char buffer[MAXSIZE+1]; //data buffer of 1K
+    char buff[MAXSIZE + 1];
 
     /* welcome message */
     char *message = "Hi you connected to server successfully \r\n";
@@ -186,3 +187,14 @@ int main(int argc, char const *argv[])
     }
     return 0;
 }
+
+// printf("Enter the number of group members from one of [2] or [3] or [4] group members :(type only the number)\n");
+// fgets(buff, 1024, stdin);
+// strtok(buff, "\n");
+// printf("You typed: %s\n", buff);
+// if (send(sd, buff, strlen(buff), 0) < 0)
+// {
+//     perror("sending message failed");
+// }
+// else
+//     printf("the sent message : \"%s\" \n", buffer);
