@@ -21,6 +21,9 @@
 /* declaring variables*/
 int client_fd  ;   //sockets
 struct sockaddr_in servaddr ; // for tcp connection
+
+fd_set server_fds;
+int max_fd;
 /* ------------------ */
 
 void Create_TCP_Connection()
@@ -50,43 +53,80 @@ void Create_TCP_Connection()
 int main(int argc, char const *argv[])
 {
     char buffer[MAXSIZE+1];
-    char *message = "Hello Server. It's me(client)!";
-    int valread;
-    int n, len;
+    //char *message = "Hello Server. It's me(client)!";
+    int event, valread;
+    //int n, len;
 
     Create_TCP_Connection();
 
-    memset(buffer, 0, sizeof(buffer));
-    strcpy(buffer, message);
-    write(client_fd, buffer, sizeof(buffer));
+    
+    // strcpy(buffer, message);
+    // write(client_fd, buffer, sizeof(buffer));
 
 
-    //printf("Message from server: ");
-    if ((valread = read(client_fd, buffer, 1024)) == 0)
+    while (TRUE)
     {
-        /* Somebody disconnected , get his details and print */
-        getpeername(client_fd, (struct sockaddr *)&servaddr, (socklen_t *)&servaddr);
-        printf("Host disconnected , ip %s , port %d \n",
-               inet_ntoa(servaddr.sin_addr), ntohs(servaddr.sin_port));
+        memset(buffer, 0, sizeof(buffer));
+        /* clear the descriptor set */
+        FD_ZERO(&server_fds);
 
-        /* Close the socket and mark as 0 in list for reuse */
-        //close(client_fd);
-    }
+        /* set client_fd in readset */
+        FD_SET(client_fd, &server_fds);
 
-    /* Echo back the message that came in */
-    else
-    {
-        /* set the string terminating NULL byte on the end
-         * of the data read */
-        buffer[valread] = '\0';
-        printf("the receievd message is: %s\n", buffer);
+        /* set stdin in readset */
+        FD_SET(fileno(stdin), &server_fds);
 
-        if (send(client_fd, message, strlen(message), 0) < 0)
+        /* set max_fds */
+        max_fd = client_fd;
+
+        /* wait for an activity on one of the sockets , timeout is NULL ,
+         * so wait indefinitely */
+        event = select(max_fd + 1, &server_fds, NULL, NULL, NULL);
+
+        if ((event < 0) && (errno != EINTR))
         {
-            perror("sending message failed");
+            perror("select() failed");
         }
-        else
-            printf("the sent message : %s \n", message);
+
+        /* If something happened on the server socket ,
+         * then its an incoming connection */
+        if (FD_ISSET(client_fd, &server_fds))
+        {
+            if ((valread = read(client_fd, buffer, 1024)) == 0)
+            {
+                /* Somebody disconnected , get his details and print */
+                getpeername(client_fd, (struct sockaddr *)&servaddr, (socklen_t *)&servaddr);
+                printf("Host disconnected , ip %s , port %d \n",
+                       inet_ntoa(servaddr.sin_addr), ntohs(servaddr.sin_port));
+
+                /* Close the socket and mark as 0 in list for reuse */
+                //close(client_fd);
+            }
+
+            /* Echo back the message that came in */
+            else
+            {
+                /* set the string terminating NULL byte on the end
+                * of the data read */
+                buffer[valread] = '\0';
+                printf("the receievd message is: %s\n", buffer);
+            }
+        }
+
+        /* else its some IO operation on some other socket */
+        if (FD_ISSET(fileno(stdin), &server_fds))
+        {
+            printf("Enter the number of group members from one of [2] or [3] or [4] group members :(type only the number)\n");
+            fgets(buffer, 1024, stdin);
+            strtok(buffer, "\n");
+            printf("You typed: %s\n", buffer);
+            if (send(client_fd, buffer, strlen(buffer), 0) < 0)
+            {
+                perror("sending message failed");
+            }
+            else
+                printf("the sent message : \"%s\" \n", buffer);
+        }
     }
 
     // read(client_fd, buffer, sizeof(buffer));
