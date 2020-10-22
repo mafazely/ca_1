@@ -24,7 +24,41 @@ struct sockaddr_in servaddr ; // for tcp connection
 
 fd_set server_fds;
 int max_fd;
+
+int port_adr_recieved;
+int client_turn;
+int group_members;
 /* ------------------ */
+
+char **split(char *str)
+{
+    char **res = NULL;
+    char *p = strtok(str, " ");
+    int n_spaces = 0, i;
+
+    /* split string and append tokens to 'res' */
+
+    while (p)
+    {
+        res = realloc(res, sizeof(char *) * ++n_spaces);
+
+        if (res == NULL)
+            exit(-1); /* memory allocation failed */
+
+        res[n_spaces - 1] = p;
+
+        p = strtok(NULL, " ");
+    }
+
+    /* realloc one extra element for the last NULL */
+
+    res = realloc(res, sizeof(char *) * (n_spaces + 1));
+    res[n_spaces] = 0;
+
+    /* free the memory allocated */
+    return res;
+    free(res);
+}
 
 void Create_TCP_Connection()
 {
@@ -55,6 +89,7 @@ int main(int argc, char const *argv[])
     char buffer[MAXSIZE+1];
     //char *message = "Hello Server. It's me(client)!";
     int event, valread;
+    char **res = NULL;
     //int n, len;
 
     Create_TCP_Connection();
@@ -110,6 +145,15 @@ int main(int argc, char const *argv[])
                 * of the data read */
                 buffer[valread] = '\0';
                 printf("the receievd message is: %s\n", buffer);
+                if (strlen(buffer) <= 9)
+                {
+                    res = split(buffer);
+                    port_adr_recieved = atoi(res[0]);
+                    client_turn = atoi(res[1]);
+                    printf("received port address is: %d and game turn is : %d \n", port_adr_recieved, client_turn);
+                    close(client_fd);
+                    break;
+                }
             }
         }
 
