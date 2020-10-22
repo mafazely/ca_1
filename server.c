@@ -66,3 +66,11 @@ void Create_TCP_Server_Port()
         exit(EXIT_FAILURE);
     }
 }
+
+int main(int argc, char const *argv[])
+{
+    int event, data;
+    Create_TCP_Server_Port();
+    while(TRUE)
+    return 0;
+}
