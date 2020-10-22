@@ -135,7 +135,7 @@ int main(int argc, char const *argv[])
                        inet_ntoa(servaddr.sin_addr), ntohs(servaddr.sin_port));
 
                 /* Close the socket and mark as 0 in list for reuse */
-                //close(client_fd);
+                close(client_fd);
             }
 
             /* Echo back the message that came in */
