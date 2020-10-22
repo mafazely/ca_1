@@ -178,7 +178,8 @@ int main(int argc, char const *argv[])
                     /* set the string terminating NULL byte on the end
                      * of the data read */
                     buffer[valread] = '\0';
-                    send(sd, buffer, strlen(buffer), 0);
+                    //send(sd, buffer, strlen(buffer), 0);
+                    printf("the received message is: \"%s\" \n", buffer);
                 }
             }
         }
