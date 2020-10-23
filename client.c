@@ -65,7 +65,8 @@ void Create_TCP_Connection()
     /* creating socket with IPv4 protocol and TCP type */
     if ((client_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
     {
-        perror("socket creation failed");
+        //perror("socket creation failed");
+        write(2, "socket failed\n", 14);
         exit(EXIT_FAILURE);
     }
 
@@ -78,10 +79,14 @@ void Create_TCP_Connection()
 
     if (connect(client_fd, (struct sockaddr *)&servaddr, sizeof(servaddr)) < 0)
     {
-        perror("Error : Connect Failed !");
+        //perror("Error : Connect Failed !");
+        write(2, "connect to server failed\n", 25);
     }
     else
-        perror("connected to the server...");
+    {
+        //perror("connected to the server...");
+        write(1, "connected to the server...\n", 27);
+    }
 }
 
 int main(int argc, char const *argv[])
@@ -91,6 +96,7 @@ int main(int argc, char const *argv[])
     int event, valread;
     char **res = NULL;
     //int n, len;
+    char str[MAXSIZE + 1];
 
     Create_TCP_Connection();
 
@@ -120,7 +126,8 @@ int main(int argc, char const *argv[])
 
         if ((event < 0) && (errno != EINTR))
         {
-            perror("select() failed");
+            //perror("select() failed");
+            write(2, "select() failed\n", 16);
         }
 
         /* If something happened on the server socket ,
@@ -131,8 +138,15 @@ int main(int argc, char const *argv[])
             {
                 /* Somebody disconnected , get his details and print */
                 getpeername(client_fd, (struct sockaddr *)&servaddr, (socklen_t *)&servaddr);
-                printf("Host disconnected , ip %s , port %d \n",
-                       inet_ntoa(servaddr.sin_addr), ntohs(servaddr.sin_port));
+                //printf("Host disconnected , ip %s , port %d \n",
+                //       inet_ntoa(servaddr.sin_addr), ntohs(servaddr.sin_port));
+                write(1, "Host disconnected , ip : ", 25);
+                write(1, inet_ntoa(servaddr.sin_addr), strlen(inet_ntoa(servaddr.sin_addr)));
+                write(1, " , port ", 8);
+                sprintf(str, "%d", ntohs(servaddr.sin_port));
+                write(1, str, strlen(str));
+                memset(str, 0, sizeof(str));
+                write(1, " \n", 2);
 
                 /* Close the socket and mark as 0 in list for reuse */
                 close(client_fd);
@@ -144,13 +158,27 @@ int main(int argc, char const *argv[])
                 /* set the string terminating NULL byte on the end
                 * of the data read */
                 buffer[valread] = '\0';
-                printf("the receievd message is: %s\n", buffer);
+                //printf("the receievd message is: %s\n", buffer);
+                write(1, "the receievd message is: ", 25);
+                write(1, buffer, strlen(buffer));
+                write(1, " \n", 2);
+                //printf("Enter the number of group members from one of [2] or [3] or [4] group members :(type only the number)\n");
+                write(1, "Enter the number of group members from one of [2] or [3] or [4] group members :(type only the number)\n", 102);
                 if (strlen(buffer) <= 9)
                 {
                     res = split(buffer);
                     port_adr_recieved = atoi(res[0]);
                     client_turn = atoi(res[1]);
-                    printf("received port address is: %d and game turn is : %d \n", port_adr_recieved, client_turn);
+                    //printf("received port address is: %d and game turn is : %d \n", port_adr_recieved, client_turn);
+                    write(1, "received port address is: ", 26);
+                    sprintf(str, "%d", port_adr_recieved);
+                    write(1, str, strlen(str));
+                    memset(str, 0, sizeof(str));
+                    write(1, " and game turn is : ", 20);
+                    sprintf(str, "%d", client_turn);
+                    write(1, str, strlen(str));
+                    memset(str, 0, sizeof(str));
+                    write(1, " \n", 2);
                     close(client_fd);
                     break;
                 }
@@ -160,21 +188,27 @@ int main(int argc, char const *argv[])
         /* else its some IO operation on some other socket */
         if (FD_ISSET(fileno(stdin), &server_fds))
         {
-            printf("Enter the number of group members from one of [2] or [3] or [4] group members :(type only the number)\n");
-            fgets(buffer, 1024, stdin);
+            //printf("Enter the number of group members from one of [2] or [3] or [4] group members :(type only the number)\n");
+            //fgets(buffer, 1024, stdin);
+            read(0 , buffer, 1024);
             strtok(buffer, "\n");
-            printf("You typed: %s\n", buffer);
+            //printf("You typed: %s\n", buffer);
             if (send(client_fd, buffer, strlen(buffer), 0) < 0)
             {
-                perror("sending message failed");
+                //perror("sending message failed");
+                write(2, "sending message failed\n", 23);
             }
             else
-                printf("the sent message : \"%s\" \n", buffer);
+            {
+                //printf("the sent message : \"%s\" \n", buffer);
+                write(1, "the sent message : \"", 21);
+                write(1, buffer, strlen(buffer));
+                write(1, "\" \n", 3);
+            }
+
+
         }
     }
-
-    // read(client_fd, buffer, sizeof(buffer));
-    // puts(buffer);
 
     return 0;
 }
