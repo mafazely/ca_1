@@ -17,7 +17,7 @@
 
 #define MAXSIZE 1024   /*max buffer size*/
 #define SERV_PORT 8080 /*port*/
-#define BROADCAST_ADDR "239.255.255.250"
+#define BROADCAST_IP_ADDR "127.255.255.250"
 
 #define BOARD_WIDTH_FOUR 4
 #define BOARD_WIDTH_THREE 3
@@ -40,6 +40,7 @@ int write_desc_flag = 1; //flag for just one time print the description
 int client_fd  ;   // TCP socket
 struct sockaddr_in servaddr ; // for tcp connection
 struct sockaddr_in broadcast_addr; // for UDP BroadCasting
+struct sockaddr_in cli_addr;
 
 fd_set server_fds;
 int max_fd;
@@ -49,9 +50,11 @@ int client_turn;
 int group_members;
 
 int udp_fd; // UDP socket
+fd_set games_fds;
+int max_udp_fd;
 /* ------------------ */
 
-char **split(char *str)
+char** split(char *str)
 {
     char **res = NULL;
     char *p = strtok(str, " ");
@@ -133,7 +136,7 @@ void Create_UDP_BroadCasting()
 
     /* Defining socket configures */
     broadcast_addr.sin_family = AF_INET;                        // for IPv4 protocol
-    broadcast_addr.sin_addr.s_addr = inet_addr(BROADCAST_ADDR); // to bind the server to the broadcast ip
+    broadcast_addr.sin_addr.s_addr = inet_addr(BROADCAST_IP_ADDR); // to bind the server to the broadcast ip
     broadcast_addr.sin_port = htons(port_adr_recieved);         // set recieved port from server
 
     /* Bind the socket with the server address  */
@@ -268,11 +271,104 @@ int main(int argc, char const *argv[])
     /* ---------------------------------------------------------------------*/
 
     Create_UDP_BroadCasting();
-
+    // getpeername(udp_fd, (struct sockaddr *)&broadcast_addr, (socklen_t *)&broadcast_addr);
+    // printf("UDP connected , ip %s , port %d \n",
+    //        inet_ntoa(broadcast_addr.sin_addr), ntohs(broadcast_addr.sin_port));
     // game_inti();
 
-    while(TRUE)
-    {}
+    event = 0;
+    valread = 0;
+    int addr_len, cli_len;
+
+    while (TRUE)
+    {
+        memset(buffer, 0, sizeof(buffer));
+        /* clear the descriptor set */
+        FD_ZERO(&games_fds);
+
+        /* set udp_fd in readset */
+        FD_SET(udp_fd, &games_fds);
+
+        /* set stdin in readset */
+        FD_SET(fileno(stdin), &games_fds);
+
+        /* set max_fds */
+        max_udp_fd = udp_fd;
+
+        /* wait for an activity on one of the sockets , timeout is NULL ,
+         * so wait indefinitely */
+        event = select(max_udp_fd + 1, &games_fds, NULL, NULL, NULL);
+
+        if ((event < 0) && (errno != EINTR))
+        {
+            //perror("select() failed");
+            write(2, "UDP select() failed\n", 20);
+        }
+
+        /* If something happened on the server socket ,
+         * then its an incoming connection */
+        if (FD_ISSET(udp_fd, &games_fds))
+        {
+            addr_len = sizeof(broadcast_addr);
+            cli_len = sizeof(cli_addr);
+            if ((valread = recvfrom(udp_fd, buffer, 1024, 0, (struct sockaddr *)&cli_addr, &cli_len)) == 0)
+            {
+                
+                // /* Somebody disconnected , get his details and print */
+                // getpeername(client_fd, (struct sockaddr *)&servaddr, (socklen_t *)&servaddr);
+                printf("UDP connected , ip %s , port %d \n",
+                       inet_ntoa(broadcast_addr.sin_addr), ntohs(broadcast_addr.sin_port));
+                // write(1, "Host disconnected , ip : ", 25);
+                // write(1, inet_ntoa(servaddr.sin_addr), strlen(inet_ntoa(servaddr.sin_addr)));
+                // write(1, " , port ", 8);
+                // sprintf(str, "%d", ntohs(servaddr.sin_port));
+                // write(1, str, strlen(str));
+                // memset(str, 0, sizeof(str));
+                // write(1, " \n", 2);
+
+                /* Close the socket */
+                close(udp_fd);
+            }
+
+            /* Echo back the message that came in */
+            else
+            {
+                /* set the string terminating NULL byte on the end
+                * of the data read */
+                printf("%s: from %s:UDP%u : %s \n",
+                       argv[0], inet_ntoa(cli_addr.sin_addr),
+                       ntohs(cli_addr.sin_port), buffer);
+                buffer[valread] = '\0';
+                //printf("the receievd message is: %s\n", buffer);
+                write(1, "the receievd message is: \"", 26);
+                write(1, buffer, strlen(buffer));
+                write(1, "\" \n", 3);
+            }
+        }
+
+        /* else its some IO operation on some other socket */
+        if (FD_ISSET(fileno(stdin), &games_fds))
+        {
+            //printf("Enter the number of group members from one of [2] or [3] or [4] group members :(type only the number)\n");
+            //fgets(buffer, 1024, stdin);
+            read(0, buffer, 1024);
+            strtok(buffer, "\n");
+            //printf("You typed: %s\n", buffer);
+            //send(udp_fd, buffer, strlen(buffer), 0)
+            if ( sendto(udp_fd, buffer, strlen(buffer) + 1, 0, (struct sockaddr *)&broadcast_addr, sizeof(broadcast_addr)) < 0)
+            {
+                //perror("sending message failed");
+                write(2, "sending message failed\n", 23);
+            }
+            else
+            {
+                //printf("the sent message : \"%s\" \n", buffer);
+                write(1, "the sent message : \"", 21);
+                write(1, buffer, strlen(buffer));
+                write(1, "\" \n", 3);
+            }
+        }
+    }
 
     return 0;
 }
