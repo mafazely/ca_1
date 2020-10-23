@@ -29,7 +29,7 @@ fd_set client_fds ; /* set of file descriptors of clients */
 int max_fds ;
 int clientSockets[MAX_CLIENTS_COUNT] = {0} ;
 
-char *wait_message = "wait for finding opponent(s).";
+char *wait_message = "wait for finding opponent(s) ...";
 int client_giving_port = 8001;
 char *status[MAX_CLIENTS_COUNT];
 /* ------------------ */
@@ -37,7 +37,7 @@ char *status[MAX_CLIENTS_COUNT];
 
 void Request_Handler(char *info, int index)
 {
-    printf("message get from client in Request_Handler : \"%s\"\n", info);
+    //printf("message get from client in Request_Handler : \"%s\"\n", info);
     if (strcmp(info, "2") == 0)
     {
         status[index] = "2";
@@ -50,12 +50,15 @@ void Request_Handler(char *info, int index)
     {
         status[index] = "4";
     }
-    printf("Client requested a %s-Group\n", status[index]);
+    write(1, "Client requested a ", 19);
+    write(1, status[index], strlen(status[index]));
+    write(1, "-Group\n", 7);
+    //printf("Client requested a %s-Group\n", status[index]);
 }
 
 void Connect_To_1_Opponent(int index, int i)
 {
-    perror("get inside Connect_To_1_Opponent() function");
+    //perror("get inside Connect_To_1_Opponent() function");
     int port;
     int data_send1, data_send2;
     char str_port[5];
@@ -65,44 +68,44 @@ void Connect_To_1_Opponent(int index, int i)
     char sending_message1[10];
     char sending_message2[10];
 
+    memset(sending_message1, 0, sizeof(sending_message1));
+    memset(sending_message2, 0, sizeof(sending_message2));
+
     port = client_giving_port;
     client_giving_port++;
-    perror("before sprintf() func");
     sprintf(str_port, "%d", port);
 
-    perror("before strcpy() func");
 
     strcpy(turn1, "1");
     strcpy(turn2, "2");
     strcpy(wspace, " ");
-
-    perror("before first strcat() func");
 
     strcat(sending_message1, str_port);
     strcat(sending_message1, wspace);
     strcat(sending_message1, turn1);
     int len1 = strlen(sending_message1);
 
-    perror("before second strcat() func");
-
     strcat(sending_message2, str_port);
     strcat(sending_message2, wspace);
     strcat(sending_message2, turn2);
     int len2 = strlen(sending_message2);
 
-    perror("being before send() function");
-    printf("sending_message1 is : \"%s\" and len1 is : %d on fd : %d\n", sending_message1, len1, clientSockets[index]);
-    printf("sending_message2 is : \"%s\" and len2 is : %d on fd : %d and i = %d\n", sending_message2, len2, clientSockets[i], i);
+    //printf("sending_message1 is : \"%s\" and len1 is : %d on fd : %d\n", sending_message1, len1, clientSockets[index]);
+    //printf("sending_message2 is : \"%s\" and len2 is : %d on fd : %d and i = %d\n", sending_message2, len2, clientSockets[i], i);
     data_send2 = sendto(clientSockets[i], sending_message2, len2, 0, NULL, 0);
-    data_send1 = send(clientSockets[index], sending_message1, len1, 0);
+    data_send1 = sendto(clientSockets[index], sending_message1, len1, 0, NULL, 0);
+
+    //data_send1 = send(clientSockets[index], sending_message1, len1, 0);
     if (data_send2 < 0 && data_send1 < 0)
     {
-        perror("sending opponent data failed");
+        //perror("sending opponent data failed");
+        write(2, "sending opponent data failed\n", 29);
     }
     else
     {
-        printf("data_send1 is : \"%d\" and data_send2 is : %d\n", data_send1, data_send2);
-        printf("two clients are connecting...\n");
+        //printf("data_send1 is : \"%d\" and data_send2 is : %d\n", data_send1, data_send2);
+        //printf("two clients are connecting...\n");
+        write(1, "two clients are connecting...\n", 30);
         close(clientSockets[i]);
         close(clientSockets[index]);
         clientSockets[i] = 0;
@@ -113,18 +116,22 @@ void Connect_To_1_Opponent(int index, int i)
 void Connect_To_2_Opponent(int index, int i, int j)
 {
     int port;
-    char *str_port;
-    char *turn1;
-    char *turn2;
-    char *turn3;
-    char *wspace;
-    char *sending_message1 = "";
-    char *sending_message2 = "";
-    char *sending_message3 = "";
+    int data_send1, data_send2, data_send3;
+    char str_port[5];
+    char turn1[2];
+    char turn2[2];
+    char turn3[2];
+    char wspace[2];
+    char sending_message1[10];
+    char sending_message2[10];
+    char sending_message3[10];
+
+    memset(sending_message1, 0, sizeof(sending_message1));
+    memset(sending_message2, 0, sizeof(sending_message2));
+    memset(sending_message3, 0, sizeof(sending_message3));
 
     port = client_giving_port;
     client_giving_port++;
-    perror("before sprintf() func");
     sprintf(str_port, "%d", port);
 
     strcpy(turn1, "1");
@@ -147,13 +154,22 @@ void Connect_To_2_Opponent(int index, int i, int j)
     strcat(sending_message3, turn3);
     int len3 = strlen(sending_message3);
 
-    if (send(clientSockets[index], sending_message1, len1, 0) < 0 && send(clientSockets[i], sending_message2, len2, 0) < 0 && send(clientSockets[j], sending_message3, len3, 0) < 0)
+    //printf("sending_message1 is : \"%s\" and len1 is : %d on fd : %d\n", sending_message1, len1, clientSockets[index]);
+    //printf("sending_message2 is : \"%s\" and len2 is : %d on fd : %d and i = %d\n", sending_message2, len2, clientSockets[i], i);
+    data_send2 = sendto(clientSockets[i], sending_message2, len2, 0, NULL, 0);
+    data_send3 = sendto(clientSockets[j], sending_message3, len3, 0, NULL, 0);
+    data_send1 = sendto(clientSockets[index], sending_message1, len1, 0, NULL, 0);
+    //data_send1 = send(clientSockets[index], sending_message1, len1, 0);
+    if (data_send2 < 0 && data_send3 < 0 && data_send1 < 0)
     {
-        perror("sending opponent data failed");
+        //perror("sending opponent data failed");
+        write(2, "sending opponent data failed\n", 29);
     }
     else
     {
-        printf("three clients are connecting...\n");
+        //printf("data_send1 is : \"%d\" and data_send2 is : %d\n", data_send1, data_send2);
+        //printf("two clients are connecting...\n");
+        write(1, "three clients are connecting...\n", 32);
         close(clientSockets[i]);
         close(clientSockets[j]);
         close(clientSockets[index]);
@@ -166,20 +182,25 @@ void Connect_To_2_Opponent(int index, int i, int j)
 void Connect_To_3_Opponent(int index, int i, int j, int k)
 {
     int port;
-    char *str_port;
-    char *turn1;
-    char *turn2;
-    char *turn3;
-    char *turn4;
-    char *wspace;
-    char *sending_message1 = "";
-    char *sending_message2 = "";
-    char *sending_message3 = "";
-    char *sending_message4 = "";
+    int data_send1, data_send2, data_send3, data_send4;
+    char str_port[5];
+    char turn1[2];
+    char turn2[2];
+    char turn3[2];
+    char turn4[2];
+    char wspace[2];
+    char sending_message1[10];
+    char sending_message2[10];
+    char sending_message3[10];
+    char sending_message4[10];
+
+    memset(sending_message1, 0, sizeof(sending_message1));
+    memset(sending_message2, 0, sizeof(sending_message2));
+    memset(sending_message3, 0, sizeof(sending_message3));
+    memset(sending_message4, 0, sizeof(sending_message4));
 
     port = client_giving_port;
     client_giving_port++;
-    perror("before sprintf() func");
     sprintf(str_port, "%d", port);
 
     strcpy(turn1, "1");
@@ -208,13 +229,24 @@ void Connect_To_3_Opponent(int index, int i, int j, int k)
     strcat(sending_message4, turn4);
     int len4 = strlen(sending_message4);
 
-    if (send(clientSockets[index], sending_message1, len1, 0) < 0 && send(clientSockets[i], sending_message2, len2, 0) < 0 && send(clientSockets[j], sending_message3, len3, 0) < 0 && send(clientSockets[k], sending_message4, len4, 0) < 0)
+    //printf("sending_message1 is : \"%s\" and len1 is : %d on fd : %d\n", sending_message1, len1, clientSockets[index]);
+    //printf("sending_message2 is : \"%s\" and len2 is : %d on fd : %d and i = %d\n", sending_message2, len2, clientSockets[i], i);
+    data_send2 = sendto(clientSockets[i], sending_message2, len2, 0, NULL, 0);
+    data_send3 = sendto(clientSockets[j], sending_message3, len3, 0, NULL, 0);
+    data_send4 = sendto(clientSockets[k], sending_message4, len4, 0, NULL, 0);
+    data_send1 = sendto(clientSockets[index], sending_message1, len1, 0, NULL, 0);
+    //data_send1 = send(clientSockets[index], sending_message1, len1, 0);
+
+    if (data_send2 < 0 && data_send3 < 0 && data_send4 < 0 && data_send1 < 0)
     {
-        perror("sending opponent data failed");
+        //perror("sending opponent data failed");
+        write(2, "sending opponent data failed\n", 29);
     }
     else
     {
-        printf("four clients are connecting...\n");
+        //printf("data_send1 is : \"%d\" and data_send2 is : %d\n", data_send1, data_send2);
+        //printf("two clients are connecting...\n");
+        write(1, "four clients are connecting...\n", 31);
         close(clientSockets[i]);
         close(clientSockets[j]);
         close(clientSockets[k]);
@@ -232,11 +264,11 @@ void Find_Opponent(int index)
     int len_wait_mes = strlen(wait_message) + 1;
     int num;
     num = atoi(status[index]);
-    printf("wants to go inside the switch case \n");
-    printf("num is : \"%d\" \n", num);
+    //printf("wants to go inside the switch case \n");
+    //printf("num is : \"%d\" \n", num);
     if (num == 2)
     {
-        printf("in num == 2 \n");
+        //printf("in num == 2 \n");
         for (int i = 0; i < MAX_CLIENTS_COUNT; i++)
         {
             if (i == index)
@@ -247,7 +279,8 @@ void Find_Opponent(int index)
                 {
                     //printf("find a copponent !!!! \n");
                     Connect_To_1_Opponent(index, i);
-                    printf("-------- start a 2-person game ------- \n");
+                    write(1, "-------- start a 2-player game ------- \n", 40);
+                    //printf("-------- start a 2-person game ------- \n");
                     return;
                 }
             }
@@ -255,14 +288,15 @@ void Find_Opponent(int index)
 
         if (send(clientSockets[index], wait_message, len_wait_mes, 0) < 0)
         {
-            perror("sending find opponent message failed");
+            //perror("sending find opponent message failed");
+            write(2, "sending find opponent message failed\n", 37);
         }
-        printf("the sent mwssage : %s \n", wait_message);
+        //printf("the sent mwssage : %s \n", wait_message);
     }
 
     else if (num == 3)
     {
-        printf("in num == 3 \n");
+        //printf("in num == 3 \n");
         for (int i = 0; i < MAX_CLIENTS_COUNT; i++)
         {
             if (i == index)
@@ -280,7 +314,8 @@ void Find_Opponent(int index)
                             if (clientSockets[j] != 0 && strcmp(status[j], status[index]) == 0)
                             {
                                 Connect_To_2_Opponent(index, i, j);
-                                printf("-------- start a 3-person game ------- \n");
+                                //printf("-------- start a 3-person game ------- \n");
+                                write(1, "-------- start a 3-player game ------- \n", 40);
                                 return;
                             }
                         }
@@ -290,13 +325,14 @@ void Find_Opponent(int index)
 
         if (send(clientSockets[index], wait_message, len_wait_mes, 0) < 0)
         {
-            perror("sending find opponent message failed");
+            //perror("sending find opponent message failed");
+            write(2, "sending find opponent message failed\n", 37);
         }
-        printf("the sent mwssage : %s \n", wait_message);
+        //printf("the sent mwssage : %s \n", wait_message);
     }
     else if (num == 4)
     {
-        printf("in num == 4 \n");
+        //printf("in num == 4 \n");
         for (int i = 0; i < MAX_CLIENTS_COUNT; i++)
         {
             if (i == index)
@@ -322,7 +358,8 @@ void Find_Opponent(int index)
                                         if (clientSockets[k] != 0 && strcmp(status[k], status[index]) == 0)
                                         {
                                             Connect_To_3_Opponent(index, i, j, k);
-                                            printf("-------- start a 4-person game ------- \n");
+                                            //printf("-------- start a 4-person game ------- \n");
+                                            write(1, "-------- start a 4-player game ------- \n", 40);
                                             return;
                                         }
                                     }
@@ -334,12 +371,11 @@ void Find_Opponent(int index)
 
         if (send(clientSockets[index], wait_message, len_wait_mes, 0) < 0)
         {
-            perror("sending find opponent message failed");
+            //perror("sending find opponent message failed");
+            write(2, "sending find opponent message failed\n", 37);
         }
     }
 }
-
-///////////////////////////
 
 void Create_TCP_Server_Port()
 {
@@ -388,7 +424,6 @@ int main(int argc, char const *argv[])
     Create_TCP_Server_Port();
 
     char buffer[MAXSIZE+1]; //data buffer of 1K
-    char buff[MAXSIZE + 1];
     char str[MAXSIZE + 1];
 
     /* welcome message */
@@ -533,15 +568,3 @@ int main(int argc, char const *argv[])
     }
     return 0;
 }
-
-// printf("Enter the number of group members from one of [2] or [3] or [4] group members :(type only the number)\n");
-// fgets(buff, 1024, stdin);
-// strtok(buff, "\n");
-// printf("You typed: %s\n", buff);
-// if (send(sd, buff, strlen(buff), 0) < 0)
-// {
-//     perror("sending message failed");
-// }
-// else
-//     printf("the sent message : \"%s\" \n", buffer);
-
