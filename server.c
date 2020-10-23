@@ -93,8 +93,9 @@ void Connect_To_1_Opponent(int index, int i)
     perror("being before send() function");
     printf("sending_message1 is : \"%s\" and len1 is : %d on fd : %d\n", sending_message1, len1, clientSockets[index]);
     printf("sending_message2 is : \"%s\" and len2 is : %d on fd : %d and i = %d\n", sending_message2, len2, clientSockets[i], i);
-    if ((data_send1 = send(clientSockets[index], sending_message1, len1, 0)) < 0 &&
-        (data_send2 = sendto(clientSockets[i], sending_message2, len2, 0, NULL, 0)) < 0)
+    data_send2 = sendto(clientSockets[i], sending_message2, len2, 0, NULL, 0);
+    data_send1 = send(clientSockets[index], sending_message1, len1, 0);
+    if (data_send2 < 0 && data_send1 < 0)
     {
         perror("sending opponent data failed");
     }
