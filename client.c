@@ -17,10 +17,29 @@
 
 #define MAXSIZE 1024   /*max buffer size*/
 #define SERV_PORT 8080 /*port*/
+#define BROADCAST_ADDR "239.255.255.250"
 
+#define BOARD_WIDTH_FOUR 4
+#define BOARD_WIDTH_THREE 3
+#define BOARD_WIDTH_TWO 2
+
+int mapH2[BOARD_WIDTH_TWO][BOARD_WIDTH_TWO + 1];  /* map for */
+int mapV2[BOARD_WIDTH_TWO + 1][BOARD_WIDTH_TWO]; /*   two   */
+int scores2[BOARD_WIDTH_TWO][BOARD_WIDTH_TWO];   /* players */
+
+int mapH3[BOARD_WIDTH_THREE][BOARD_WIDTH_THREE + 1]; /* map for */
+int mapV3[BOARD_WIDTH_THREE + 1][BOARD_WIDTH_THREE]; /*  three  */
+int scores3[BOARD_WIDTH_THREE][BOARD_WIDTH_THREE];   /* players */
+
+int mapH4[BOARD_WIDTH_FOUR][BOARD_WIDTH_FOUR + 1]; /* map for */
+int mapV4[BOARD_WIDTH_FOUR + 1][BOARD_WIDTH_FOUR]; /*   four  */
+int scores4[BOARD_WIDTH_FOUR][BOARD_WIDTH_FOUR];   /* players */
+
+int write_desc_flag = 1; //flag for just one time print the description
 /* declaring variables*/
-int client_fd  ;   //sockets
+int client_fd  ;   // TCP socket
 struct sockaddr_in servaddr ; // for tcp connection
+struct sockaddr_in broadcast_addr; // for UDP BroadCasting
 
 fd_set server_fds;
 int max_fd;
@@ -28,6 +47,8 @@ int max_fd;
 int port_adr_recieved;
 int client_turn;
 int group_members;
+
+int udp_fd; // UDP socket
 /* ------------------ */
 
 char **split(char *str)
@@ -89,6 +110,41 @@ void Create_TCP_Connection()
     }
 }
 
+void Create_UDP_BroadCasting()
+{
+    int broadcast = 1;
+    /* creating socket file descriptor */
+    if ((udp_fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
+    {
+        //perror("UDP socket creation failed");
+        write(2, "UDP socket creation failed\n", 27);
+        exit(EXIT_FAILURE);
+    }
+
+    /* attaching socket to the port [8080] and set broadcasting flag */
+    if (setsockopt(udp_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT | SO_BROADCAST, &broadcast, sizeof(broadcast)))
+    {
+        //perror("UDP setsockopt failed");
+        write(2, "UDP setsockopt failed\n", 22);
+        exit(EXIT_FAILURE);
+    }
+
+    memset(&broadcast_addr, 0, sizeof(broadcast_addr));
+
+    /* Defining socket configures */
+    broadcast_addr.sin_family = AF_INET;                        // for IPv4 protocol
+    broadcast_addr.sin_addr.s_addr = inet_addr(BROADCAST_ADDR); // to bind the server to the broadcast ip
+    broadcast_addr.sin_port = htons(port_adr_recieved);         // set recieved port from server
+
+    /* Bind the socket with the server address  */
+    if (bind(udp_fd, (const struct sockaddr *)&broadcast_addr, sizeof(broadcast_addr)) < 0)
+    {
+        //perror("UDP binding failed");
+        write(2, "UDP binding failed\n", 19);
+        exit(EXIT_FAILURE);
+    }
+}
+
 int main(int argc, char const *argv[])
 {
     char buffer[MAXSIZE+1];
@@ -100,11 +156,7 @@ int main(int argc, char const *argv[])
 
     Create_TCP_Connection();
 
-    
-    // strcpy(buffer, message);
-    // write(client_fd, buffer, sizeof(buffer));
-
-
+    /* ---- handling tcp connection and get port number and turn number ----*/
     while (TRUE)
     {
         memset(buffer, 0, sizeof(buffer));
@@ -163,7 +215,12 @@ int main(int argc, char const *argv[])
                 write(1, buffer, strlen(buffer));
                 write(1, " \n", 2);
                 //printf("Enter the number of group members from one of [2] or [3] or [4] group members :(type only the number)\n");
-                write(1, "Enter the number of group members from one of [2] or [3] or [4] group members :(type only the number)\n", 102);
+                if (write_desc_flag)
+                {
+                    write(1, "Enter the number of group members from one of [2] or [3] or [4] group members :(type only the number)\n",
+                     102);
+                    write_desc_flag = 0;
+                }
                 if (strlen(buffer) <= 9)
                 {
                     res = split(buffer);
@@ -201,14 +258,21 @@ int main(int argc, char const *argv[])
             else
             {
                 //printf("the sent message : \"%s\" \n", buffer);
+                group_members = atoi(buffer);
                 write(1, "the sent message : \"", 21);
                 write(1, buffer, strlen(buffer));
                 write(1, "\" \n", 3);
             }
-
-
         }
     }
+    /* ---------------------------------------------------------------------*/
+
+    Create_UDP_BroadCasting();
+
+    // game_inti();
+
+    while(TRUE)
+    {}
 
     return 0;
 }
