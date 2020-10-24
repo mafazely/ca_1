@@ -42,7 +42,7 @@ struct sockaddr_in servaddr ; // for tcp connection
 struct sockaddr_in broadcast_addr; // for UDP BroadCasting
 struct sockaddr_in cli_addr;
 
-fd_set server_fds;
+fd_set server_fds; // communication between client and server
 int max_fd;
 
 int port_adr_recieved;
@@ -50,7 +50,7 @@ int client_turn;
 int group_members;
 
 int udp_fd; // UDP socket
-fd_set games_fds;
+fd_set games_fds; // communication between clients
 int max_udp_fd;
 /* ------------------ */
 
