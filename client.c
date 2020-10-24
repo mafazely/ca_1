@@ -19,23 +19,26 @@
 #define SERV_PORT 8080 /*port*/
 #define BROADCAST_IP_ADDR "127.255.255.250"
 
-// #define BOARD_WIDTH_FOUR 4
-// #define BOARD_WIDTH_THREE 3
-// #define BOARD_WIDTH_TWO 2
+//  ----------------  game part ----------------- //
+#define BOARD_WIDTH_FOUR 4
+#define BOARD_WIDTH_THREE 3
+#define BOARD_WIDTH_TWO 2
 
-// int mapH2[BOARD_WIDTH_TWO][BOARD_WIDTH_TWO + 1];  /* map for */
-// int mapV2[BOARD_WIDTH_TWO + 1][BOARD_WIDTH_TWO]; /*   two   */
-// int scores2[BOARD_WIDTH_TWO][BOARD_WIDTH_TWO];   /* players */
+int mapH2[BOARD_WIDTH_TWO][BOARD_WIDTH_TWO + 1];  /* map for */
+int mapV2[BOARD_WIDTH_TWO + 1][BOARD_WIDTH_TWO]; /*   two   */
+int scores2[BOARD_WIDTH_TWO][BOARD_WIDTH_TWO];   /* players */
 
-// int mapH3[BOARD_WIDTH_THREE][BOARD_WIDTH_THREE + 1]; /* map for */
-// int mapV3[BOARD_WIDTH_THREE + 1][BOARD_WIDTH_THREE]; /*  three  */
-// int scores3[BOARD_WIDTH_THREE][BOARD_WIDTH_THREE];   /* players */
+int mapH3[BOARD_WIDTH_THREE][BOARD_WIDTH_THREE + 1]; /* map for */
+int mapV3[BOARD_WIDTH_THREE + 1][BOARD_WIDTH_THREE]; /*  three  */
+int scores3[BOARD_WIDTH_THREE][BOARD_WIDTH_THREE];   /* players */
 
-// int mapH4[BOARD_WIDTH_FOUR][BOARD_WIDTH_FOUR + 1]; /* map for */
-// int mapV4[BOARD_WIDTH_FOUR + 1][BOARD_WIDTH_FOUR]; /*   four  */
-// int scores4[BOARD_WIDTH_FOUR][BOARD_WIDTH_FOUR];   /* players */
+int mapH4[BOARD_WIDTH_FOUR][BOARD_WIDTH_FOUR + 1]; /* map for */
+int mapV4[BOARD_WIDTH_FOUR + 1][BOARD_WIDTH_FOUR]; /*   four  */
+int scores4[BOARD_WIDTH_FOUR][BOARD_WIDTH_FOUR];   /* players */
+// ---------------------------------------------- //
 
 int write_desc_flag = 1; //flag for just one time print the description
+
 /* declaring variables*/
 int client_fd  ;   // TCP socket
 struct sockaddr_in servaddr ; // for tcp connection
@@ -54,6 +57,312 @@ int udp_fd; // UDP socket
 fd_set games_fds; // communication between clients
 int max_udp_fd;
 /* ------------------ */
+
+// ------------------- game part -------------------- //
+
+void Init_Game(int const size, int mapV[size + 1][size], int mapH[size][size + 1], int score[size][size])
+{
+    for (int i = 0; i < size + 1; i++)
+    {
+        for (int j = 0; j < size + 1; j++)
+        {
+            if (j < size)
+                mapV[i][j] = 0;
+            if (i < size)
+                mapH[i][j] = 0;
+            if (j < size && j < size)
+                score[i][j] = 0;
+        }
+    }
+}
+
+bool Have_Winner(int const size, int scores[size][size])
+{
+    for (int i = 0; i < size; i++)
+    {
+        for (int j = 0; j < size; j++)
+        {
+            if (scores[i][j] == 0)
+                return false;
+        }
+    }
+    return true;
+}
+
+void printScores(int const size, int score[size][size])
+{
+    int a = 0;
+    int b = 0;
+    int c = 0;
+    int d = 0;
+
+    for (int i = 0; i < size; i++)
+        for (int j = 0; j < size; j++)
+        {
+            if (score[i][j] == 1)
+                a++;
+            else if (score[i][j] == 2)
+                b++;
+            else if (score[i][j] == 3)
+                c++;
+            else if (score[i][j] == 4)
+                d++;
+        }
+
+    switch (size)
+    {
+    case 2:
+        printf("Player 1 : %d\n", a);
+        printf("Player 2 : %d\n", b);
+        printf("Player-%s won the game!", a > b ? "1" : "2");
+        break;
+
+    case 3:
+        printf("Player 1 : %d\n", a);
+        printf("Player 2 : %d\n", b);
+        printf("Player 3 : %d\n", c);
+
+        if (a > b)
+        {
+            if (a > c)
+                printf("Player-%s won the game!", "1");
+            else
+                printf("Player-%s won the game!", "3");
+        }
+        else
+            printf("Player-%s won the game!", "2");
+        break;
+
+    case 4:
+        printf("Player 1 : %d\n", a);
+        printf("Player 2 : %d\n", b);
+        printf("Player 3 : %d\n", c);
+        printf("Player 4 : %d\n", d);
+
+        if (a > b)
+        {
+            if (a > c)
+            {
+                if (a > d)
+                    printf("Player-%s won the game!", "1");
+                else
+                    printf("Player-%s won the game!", "4");
+            }
+            else
+                printf("Player-%s won the game!", "3");
+        }
+        else
+            printf("Player-%s won the game!", "2");
+        break;
+
+    default:
+        break;
+    }
+}
+
+void Util_Vertical_Lines(int const size, int mapV[size + 1][size], int line)
+{
+    for (int i = 0; i < size; i++)
+    {
+        if (mapV[line][i] == 1)
+        {
+            if (i == 0)
+                printf("*--*");
+            else
+                printf("--*");
+        }
+        else
+        {
+            if (i == 0)
+                printf("*  *");
+            else
+                printf("  *");
+        }
+    }
+    printf("\n");
+}
+
+void Util_Horizonal_Lines(int const size, int mapH[size][size + 1], int score[size][size], int line)
+{
+    for (int i = 0; i < size + 1; i++)
+    {
+        if (mapH[line][i] == 1)
+            printf("|");
+        else
+            printf(" ");
+        if (i != size)
+        {
+            if (score[line][i] == 4)
+                printf("D ");
+            else if (score[line][i] == 3)
+                printf("C ");
+            else if (score[line][i] == 2)
+                printf("B ");
+            else if (score[line][i] == 1)
+                printf("A ");
+            else
+                printf("  ");
+        }
+    }
+    printf("\n");
+}
+
+void Print_Map(int const size, int mapV[size + 1][size], int mapH[size][size + 1], int score[size][size])
+{
+    printf("\n");
+    for (int i = 0; i < size + 1; i++)
+    {
+        Util_Vertical_Lines(size, mapV, i);
+        if (i != size)
+            Util_Horizonal_Lines(size, mapH, score, i);
+    }
+}
+
+int Add_New_Line(int const size, int z, int x, int y, int mapV[size + 1][size], int mapH[size][size + 1], int score[size][size], int turn)
+{
+    int s, newTurn;
+    int local_turn = turn - 1;
+
+    if (size == 2)
+    {
+        // if (local_turn % 2 == 0)
+        //     local_turn++;
+        newTurn = (local_turn + 1) % 2;
+    }
+    else if (size == 3)
+    {
+        // if (local_turn % 3 == 0)
+        //     local_turn++;
+        newTurn = (local_turn + 1) % 3;
+    }
+    else if (size == 4)
+    {
+        // if (local_turn % 4 == 0)
+        //     local_turn++;
+        newTurn = (local_turn + 1) % 4;
+    }
+
+    if (local_turn == 1)
+        s = 1;
+    else if (local_turn == 2)
+        s = 2;
+    else if (local_turn == 3)
+        s = 3;
+    else if (local_turn == 4)
+        s = 4;
+
+    if (z == 0)
+    {
+        mapV[x - 1][y - 1] = 1;
+        if (x != 1)
+            if (mapH[x - 2][y - 1] && mapH[x - 2][y] && mapV[x - 2][y - 1]) // Check upper square
+            {
+                score[x - 2][y - 1] = s;
+                newTurn = local_turn;
+            }
+        if (x != size + 1)
+            if (mapH[x - 1][y - 1] && mapH[x - 1][y] && mapV[x][y - 1]) // Check lower
+            {
+                score[x - 1][y - 1] = s;
+                newTurn = local_turn;
+            }
+    }
+    if (z == 1)
+    {
+        mapH[x - 1][y - 1] = 1;
+        if (y != 1)
+            if (mapV[x - 1][y - 2] && mapV[x][y - 2] && mapH[x - 1][y - 2]) // left square
+            {
+                score[x - 1][y - 2] = s;
+                newTurn = local_turn;
+            }
+        if (y != size + 2)
+            if (mapV[x - 1][y - 1] && mapV[x][y - 2] && mapH[x - 1][y]) // right square
+            {
+                score[x - 1][y - 1] = s;
+                newTurn = local_turn;
+            }
+    }
+    //printf("returnd trun is : %d", local_turn);
+    return (newTurn + 1);
+}
+
+void first_init_game()
+{
+    int num_of_playes = group_members;
+
+    if (num_of_playes == 2)
+    {
+        Init_Game(2, mapV2, mapH2, scores2);
+    }
+    else if (num_of_playes == 3)
+    {
+        Init_Game(3, mapV3, mapH3, scores3);
+    }
+    else if (num_of_playes == 4)
+    {
+        Init_Game(4, mapV4, mapH4, scores4);
+    }
+}
+
+void game(int z, int x, int y)
+{
+    int num_of_playes = group_members;
+    int turn = client_turn;
+    char str[MAXSIZE + 1];
+
+    if (group_members == 2)
+    {
+        while (!Have_Winner(2, scores2))
+        {
+            Print_Map(2, mapV2, mapH2, scores2);
+            //printf("turn : Player-%d. Please enter coordinates : \n", turn);
+            write(1, "turn : Player-", 14);
+            sprintf(str, "%d", turn);
+            write(1, str, strlen(str));
+            memset(str, 0, sizeof(str));
+            write(1, ". Please enter coordinates : \n", 30);
+            turn = Add_New_Line(2, z, x, y, mapV2, mapH2, scores2, turn);
+        }
+        Print_Map(2, mapV2, mapH2, scores2);
+        printScores(2, scores2);
+    }
+    else if (group_members == 3)
+    {
+        while (!Have_Winner(3, scores3))
+        {
+            Print_Map(3, mapV3, mapH3, scores3);
+            //printf("turn : Player-%d. Please enter coordinates : \n", turn);
+            write(1, "turn : Player-", 14);
+            sprintf(str, "%d", turn);
+            write(1, str, strlen(str));
+            memset(str, 0, sizeof(str));
+            write(1, ". Please enter coordinates : \n", 30);
+            turn = Add_New_Line(3, z, x, y, mapV3, mapH3, scores3, turn);
+        }
+        Print_Map(3, mapV3, mapH3, scores3);
+        printScores(3, scores3);
+    }
+    else if (group_members == 4)
+    {
+        while (!Have_Winner(4, scores4))
+        {
+            Print_Map(4, mapV4, mapH4, scores4);
+            //printf("turn : Player-%d. Please enter coordinates : \n", turn);
+            write(1, "turn : Player-", 14);
+            sprintf(str, "%d", turn);
+            write(1, str, strlen(str));
+            memset(str, 0, sizeof(str));
+            write(1, ". Please enter coordinates : \n", 30);
+            turn = Add_New_Line(4, z, x, y, mapV4, mapH4, scores4, turn);
+        }
+        Print_Map(4, mapV4, mapH4, scores4);
+        printScores(4, scores4);
+    }
+}
+
+// -------------------------------------------------- //
+
 
 char** split(char *str)
 {
@@ -157,10 +466,9 @@ void Create_UDP_BroadCasting()
 int main(int argc, char const *argv[])
 {
     char buffer[MAXSIZE+1];
-    //char *message = "Hello Server. It's me(client)!";
     int event, valread, valread2;
     char **res = NULL;
-    //int n, len;
+    char **res_get = NULL;
     char str[MAXSIZE + 1];
 
     Create_TCP_Connection();
@@ -277,16 +585,14 @@ int main(int argc, char const *argv[])
     /* ---------------------------------------------------------------------*/
 
     Create_UDP_BroadCasting();
-    // getpeername(udp_fd, (struct sockaddr *)&broadcast_addr, (socklen_t *)&broadcast_addr);
-    // printf("UDP connected , ip %s , port %d \n",
-    //        inet_ntoa(broadcast_addr.sin_addr), ntohs(broadcast_addr.sin_port));
-    // game_inti();
+
+    first_init_game();
 
     event = 0;
     valread = 0;
     valread2 = 0;
     int addr_len, cli_len;
-
+    int x, y, z;
     while (TRUE)
     {
         memset(buffer, 0, sizeof(buffer));
@@ -320,19 +626,6 @@ int main(int argc, char const *argv[])
             cli_len = sizeof(cli_addr);
             if ((valread = recv(udp_fd, buffer, 1024, 0)) == 0)
             {
-                
-                // /* Somebody disconnected , get his details and print */
-                // getpeername(client_fd, (struct sockaddr *)&servaddr, (socklen_t *)&servaddr);
-                printf("UDP connected , ip %s , port %d \n",
-                       inet_ntoa(broadcast_addr.sin_addr), ntohs(broadcast_addr.sin_port));
-                // write(1, "Host disconnected , ip : ", 25);
-                // write(1, inet_ntoa(servaddr.sin_addr), strlen(inet_ntoa(servaddr.sin_addr)));
-                // write(1, " , port ", 8);
-                // sprintf(str, "%d", ntohs(servaddr.sin_port));
-                // write(1, str, strlen(str));
-                // memset(str, 0, sizeof(str));
-                // write(1, " \n", 2);
-
                 /* Close the socket */
                 close(udp_fd);
             }
@@ -342,26 +635,28 @@ int main(int argc, char const *argv[])
             {
                 /* set the string terminating NULL byte on the end
                 * of the data read */
-                printf("%s: from %s:UDP%u : %s \n",
-                       argv[0], inet_ntoa(cli_addr.sin_addr),
-                       ntohs(cli_addr.sin_port), buffer);
-                buffer[valread] = '\0';
-                //printf("the receievd message is: %s\n", buffer);
-                write(1, "the receievd message is: \"", 26);
-                write(1, buffer, strlen(buffer));
-                write(1, "\" \n", 3);
+                // printf("%s: from %s:UDP%u : %s \n",
+                //        argv[0], inet_ntoa(cli_addr.sin_addr),
+                //        ntohs(cli_addr.sin_port), buffer);
+                // buffer[valread] = '\0';
+                // //printf("the receievd message is: %s\n", buffer);
+                // write(1, "the receievd message is: \"", 26);
+                // write(1, buffer, strlen(buffer));
+                // write(1, "\" \n", 3);
+                res_get = split(buffer);
+                z = atoi(res_get[1]);
+                x = atoi(res_get[2]);
+                y = atoi(res_get[3]);
+                //game(z, x, y);
             }
         }
 
         /* else its some IO operation on some other socket */
         if (FD_ISSET(fileno(stdin), &games_fds))
         {
-            //printf("Enter the number of group members from one of [2] or [3] or [4] group members :(type only the number)\n");
-            //fgets(buffer, 1024, stdin);
             read(0, buffer, 1024);
             strtok(buffer, "\n");
-            //printf("You typed: %s\n", buffer);
-            //send(udp_fd, buffer, strlen(buffer), 0)
+
             if ( sendto(udp_fd, buffer, strlen(buffer) + 1, 0, (struct sockaddr *)&broadcast_addr, sizeof(broadcast_addr)) < 0)
             {
                 //perror("sending message failed");
@@ -376,6 +671,5 @@ int main(int argc, char const *argv[])
             }
         }
     }
-
     return 0;
 }
