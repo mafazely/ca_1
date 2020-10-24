@@ -586,7 +586,7 @@ int main(int argc, char const *argv[])
 
     Create_UDP_BroadCasting();
 
-    first_init_game();
+    //first_init_game();
 
     event = 0;
     valread = 0;
@@ -635,18 +635,18 @@ int main(int argc, char const *argv[])
             {
                 /* set the string terminating NULL byte on the end
                 * of the data read */
-                // printf("%s: from %s:UDP%u : %s \n",
-                //        argv[0], inet_ntoa(cli_addr.sin_addr),
-                //        ntohs(cli_addr.sin_port), buffer);
-                // buffer[valread] = '\0';
-                // //printf("the receievd message is: %s\n", buffer);
-                // write(1, "the receievd message is: \"", 26);
-                // write(1, buffer, strlen(buffer));
-                // write(1, "\" \n", 3);
-                res_get = split(buffer);
-                z = atoi(res_get[1]);
-                x = atoi(res_get[2]);
-                y = atoi(res_get[3]);
+                printf("%s: from %s:UDP%u : %s \n",
+                       argv[0], inet_ntoa(cli_addr.sin_addr),
+                       ntohs(cli_addr.sin_port), buffer);
+                buffer[valread] = '\0';
+                //printf("the receievd message is: %s\n", buffer);
+                write(1, "the receievd message is: \"", 26);
+                write(1, buffer, strlen(buffer));
+                write(1, "\" \n", 3);
+                // res_get = split(buffer);
+                // z = atoi(res_get[1]);
+                // x = atoi(res_get[2]);
+                // y = atoi(res_get[3]);
                 //game(z, x, y);
             }
         }
