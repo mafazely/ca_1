@@ -19,21 +19,21 @@
 #define SERV_PORT 8080 /*port*/
 #define BROADCAST_IP_ADDR "127.255.255.250"
 
-#define BOARD_WIDTH_FOUR 4
-#define BOARD_WIDTH_THREE 3
-#define BOARD_WIDTH_TWO 2
+// #define BOARD_WIDTH_FOUR 4
+// #define BOARD_WIDTH_THREE 3
+// #define BOARD_WIDTH_TWO 2
 
-int mapH2[BOARD_WIDTH_TWO][BOARD_WIDTH_TWO + 1];  /* map for */
-int mapV2[BOARD_WIDTH_TWO + 1][BOARD_WIDTH_TWO]; /*   two   */
-int scores2[BOARD_WIDTH_TWO][BOARD_WIDTH_TWO];   /* players */
+// int mapH2[BOARD_WIDTH_TWO][BOARD_WIDTH_TWO + 1];  /* map for */
+// int mapV2[BOARD_WIDTH_TWO + 1][BOARD_WIDTH_TWO]; /*   two   */
+// int scores2[BOARD_WIDTH_TWO][BOARD_WIDTH_TWO];   /* players */
 
-int mapH3[BOARD_WIDTH_THREE][BOARD_WIDTH_THREE + 1]; /* map for */
-int mapV3[BOARD_WIDTH_THREE + 1][BOARD_WIDTH_THREE]; /*  three  */
-int scores3[BOARD_WIDTH_THREE][BOARD_WIDTH_THREE];   /* players */
+// int mapH3[BOARD_WIDTH_THREE][BOARD_WIDTH_THREE + 1]; /* map for */
+// int mapV3[BOARD_WIDTH_THREE + 1][BOARD_WIDTH_THREE]; /*  three  */
+// int scores3[BOARD_WIDTH_THREE][BOARD_WIDTH_THREE];   /* players */
 
-int mapH4[BOARD_WIDTH_FOUR][BOARD_WIDTH_FOUR + 1]; /* map for */
-int mapV4[BOARD_WIDTH_FOUR + 1][BOARD_WIDTH_FOUR]; /*   four  */
-int scores4[BOARD_WIDTH_FOUR][BOARD_WIDTH_FOUR];   /* players */
+// int mapH4[BOARD_WIDTH_FOUR][BOARD_WIDTH_FOUR + 1]; /* map for */
+// int mapV4[BOARD_WIDTH_FOUR + 1][BOARD_WIDTH_FOUR]; /*   four  */
+// int scores4[BOARD_WIDTH_FOUR][BOARD_WIDTH_FOUR];   /* players */
 
 int write_desc_flag = 1; //flag for just one time print the description
 /* declaring variables*/
@@ -41,6 +41,7 @@ int client_fd  ;   // TCP socket
 struct sockaddr_in servaddr ; // for tcp connection
 struct sockaddr_in broadcast_addr; // for UDP BroadCasting
 struct sockaddr_in cli_addr;
+struct sockaddr_in bind_addr;
 
 fd_set server_fds; // communication between client and server
 int max_fd;
@@ -132,27 +133,32 @@ void Create_UDP_BroadCasting()
         exit(EXIT_FAILURE);
     }
 
-    memset(&broadcast_addr, 0, sizeof(broadcast_addr));
-
     /* Defining socket configures */
-    broadcast_addr.sin_family = AF_INET;                        // for IPv4 protocol
-    broadcast_addr.sin_addr.s_addr = inet_addr(BROADCAST_IP_ADDR); // to bind the server to the broadcast ip
-    broadcast_addr.sin_port = htons(port_adr_recieved);         // set recieved port from server
+    memset(&bind_addr, 0, sizeof(bind_addr));
+    bind_addr.sin_family = AF_INET;  // for IPv4 protocol
+    bind_addr.sin_addr.s_addr = INADDR_ANY;  // to bind the server to the broadcast ip
+    bind_addr.sin_port = htons(port_adr_recieved);  // set recieved port from server
 
     /* Bind the socket with the server address  */
-    if (bind(udp_fd, (const struct sockaddr *)&broadcast_addr, sizeof(broadcast_addr)) < 0)
+    if (bind(udp_fd, (const struct sockaddr *)&bind_addr, sizeof(bind_addr)) < 0)
     {
         //perror("UDP binding failed");
         write(2, "UDP binding failed\n", 19);
         exit(EXIT_FAILURE);
     }
+
+    memset(&broadcast_addr, 0, sizeof(broadcast_addr));
+    /* Defining socket configures */
+    broadcast_addr.sin_family = AF_INET;  // for IPv4 protocol
+    broadcast_addr.sin_addr.s_addr = inet_addr(BROADCAST_IP_ADDR);  // for broadcasting
+    broadcast_addr.sin_port = htons(port_adr_recieved);  // set recieved port from server
 }
 
 int main(int argc, char const *argv[])
 {
     char buffer[MAXSIZE+1];
     //char *message = "Hello Server. It's me(client)!";
-    int event, valread;
+    int event, valread, valread2;
     char **res = NULL;
     //int n, len;
     char str[MAXSIZE + 1];
@@ -278,6 +284,7 @@ int main(int argc, char const *argv[])
 
     event = 0;
     valread = 0;
+    valread2 = 0;
     int addr_len, cli_len;
 
     while (TRUE)
@@ -311,7 +318,7 @@ int main(int argc, char const *argv[])
         {
             addr_len = sizeof(broadcast_addr);
             cli_len = sizeof(cli_addr);
-            if ((valread = recvfrom(udp_fd, buffer, 1024, 0, (struct sockaddr *)&cli_addr, &cli_len)) == 0)
+            if ((valread = recv(udp_fd, buffer, 1024, 0)) == 0)
             {
                 
                 // /* Somebody disconnected , get his details and print */
